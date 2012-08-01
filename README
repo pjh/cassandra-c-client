@@ -1,0 +1,12 @@
+cassandra-c-client
+==================
+A very basic C client for Cassandra. Note that this code should be taken as a "proof of concept"; it is likely to be unstable, and it comes nowhere close to using all of the power / features of Cassandra. It was originally created to perform a basic performance comparison of Cassandra with some other key-value stores. Others may find this useful for ...
+
+Also, please note that I am not a guru and I realize that my Makefiles, coding style, etc. could probably use improvement.
+
+
+Instructions to use:
+====================
+The Cassandra C Client relies on the Apache Thrift framework. Thrift is the interface/transport used by Cassandra to communicate with clients. For more information, see:
+	http://wiki.apache.org/cassandra/ClientOptions
+
