@@ -308,32 +308,16 @@ int cassandra_describe_keyspaces(cassandra_node *node)
  */
 int cassandra_create_keyspace(cassandra_node *node, const char *keyspace_name)
 {
-	gboolean retbool;
-	GError *err;
-	InvalidRequestException *invalidreq_except;
+	//gboolean retbool;
+	//GError *err;
+	//InvalidRequestException *invalidreq_except;
+	//
+	//err = NULL;
+	//invalidreq_except = NULL;
 
-	err = NULL;
-	invalidreq_except = NULL;
+	ccc_die("not implemented yet!\n");
 
-	retbool = cassandra_if_set_keyspace(node->iface, keyspace_name,
-			&invalidreq_except, &err);
-	check_gerror(&err);
-	if (invalidreq_except) {
-		ccc_error("cassandra_if_set_keyspace(%s) returned "
-		    "InvalidRequestException: %s\n", keyspace_name,
-		    invalidreq_except->why);
-		g_object_unref(invalidreq_except);
-		retbool = FALSE;  //make sure to hit error case that comes next
-	}
-	if (retbool != TRUE) {
-		ccc_error("cassandra_if_set_keyspace(%s) returned error\n",
-		    keyspace_name);
-		return -1;
-	}
-	ccc_debug("cassandra_if_set_keyspace(%s) returned success\n",
-	    keyspace_name);
 	return 0;
-
 }
 
 /* Connects to the specified keyspace.
@@ -381,7 +365,10 @@ int cassandra_drop_column_family(cassandra_node *node, const char *col_fam_name)
 	GError *err;
 	InvalidRequestException *invalidreq_except;
 	SchemaDisagreementException *schemadisagree_except;
-	const char *not_found_message = "CF is not defined in that keyspace";
+	const char *not_found_message = "Cannot drop non existing column family";
+	  // Note: I found that this error message actually did change between
+	  // when I first wrote this code and when I pushed it to github for
+	  // Cassandra 1.1.2 ...
 
 	retval = -1;
 	err = NULL;
@@ -553,7 +540,7 @@ int cassandra_start(cassandra_node **node, unsigned int port)
 	GError *err = NULL;
 
 	/* Initialize GObject and GType stuff: */
-	g_type_init ();
+	g_type_init();
 
 	*node = cassandra_node_alloc(CASSANDRA_HOSTNAME, port);
 	if (*node == NULL) {
@@ -676,12 +663,12 @@ int cassandra_start(cassandra_node **node, unsigned int port)
 		return -1;
 	}
 
-	// Skip this, for now
+	// Skip this, for now; not implemented yet, must create keyspace manually
 	//ret = cassandra_create_keyspace(*node, CASSANDRA_KEYSPACE);
 	//if (ret != 0) {
-	//		ccc_error("cassandra_create_keyspace returned error=%d\n", ret);
-	//		return -1;
-	//	}
+	//	ccc_error("cassandra_create_keyspace returned error=%d\n", ret);
+	//	return -1;
+	//}
 
 	ret = cassandra_set_keyspace(*node, CASSANDRA_KEYSPACE);
 	if (ret != 0) {
@@ -724,15 +711,14 @@ int cassandra_start(cassandra_node **node, unsigned int port)
 	return 0;
 }
 
+/* This function is mostly just copy-and-pasted from cassandra_start() :(
+ */
 int cassandra_worker_start(cassandra_node **node, unsigned int port)
 {
 	int ret;
 	gboolean retbool;
 	gchar *retstring;
 	GError *err = NULL;
-
-	/* Initialize GObject and GType stuff: */
-	g_type_init ();
 
 	*node = cassandra_node_alloc(CASSANDRA_HOSTNAME, port);
 	if (*node == NULL) {
@@ -848,19 +834,6 @@ int cassandra_worker_start(cassandra_node **node, unsigned int port)
 	    "Thrift API version %s\n", (*node)->hostname, (*node)->port,
 	    retstring);
 	free(retstring);
-
-	ret = cassandra_describe_keyspaces(*node);
-	if (ret != 0) {
-		ccc_error("cassandra_describe_keyspaces returned error=%d\n", ret);
-		return -1;
-	}
-
-	// Skip this, for now
-	//ret = cassandra_create_keyspace(*node, CASSANDRA_KEYSPACE);
-	//if (ret != 0) {
-	//	ccc_error("cassandra_create_keyspace returned error=%d\n", ret);
-	//	return -1;
-	//}
 
 	ret = cassandra_set_keyspace(*node, CASSANDRA_KEYSPACE);
 	if (ret != 0) {

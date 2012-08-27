@@ -43,7 +43,7 @@
  * but possibly causes slowdown.
  */
 #define ccc_print(f, a...)  do { \
-	fprintf(stdout, "KP: %lu: " f, pthread_self(), ##a); \
+	fprintf(stdout, "CCC: %lu: " f, pthread_self(), ##a); \
 	fflush(stdout); \
 } while(0)
 #define ccc_warn(f, a...)  do { \
@@ -69,7 +69,7 @@
  * desired.
  */
 #define ccc_die(f, a...)  do { \
-	fprintf(stderr, "KP: Fatal error (%lu: %s): " f, pthread_self(), __func__, ##a); \
+	fprintf(stderr, "CCC: Fatal error (%lu: %s): " f, pthread_self(), __func__, ##a); \
 	fflush(stderr); \
 	abort(); \
 } while(0)

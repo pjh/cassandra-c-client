@@ -53,6 +53,10 @@ int main(int argc, char *argv[])
 	ret = cassandra_noop5(node);
 	ccc_testcase_int(tid, "cassandra_noop5", 0, ret);
 
+	/* TODO: throughout the rest of this file, the explicit return value
+	 * checks should be replaced with calls to ccc_testcase_*()...
+	 */
+
 	/* Get on empty store should return non-found: */
 	ret = cassandra_get(node, key1, &retval);
 	if (ret == 1) {
@@ -133,6 +137,8 @@ int main(int argc, char *argv[])
 			ccc_error("...but didn't set retval, wtf\n");
 		}
 	}
+#else
+	ccc_print("not testing deletions, not implemented yet\n");
 #endif
 	ret = cassandra_get(node, key2, &retval);
 	if (ret == 1) {

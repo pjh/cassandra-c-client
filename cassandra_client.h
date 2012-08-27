@@ -47,6 +47,13 @@ typedef struct cassandra_node_struct cassandra_node;
  * to a newly-allocated cassandra_node.
  */
 int cassandra_start(cassandra_node **node, unsigned int port);
+
+/* Used to start additional Cassandra nodes connecting to the same keyspace;
+ * cassandra_start() must be called once first, and then this function can
+ * be called repeatedly by additional "worker" threads.
+ * Returns: 0 on success, -1 on error. On success, *node is set to point
+ * to a newly-allocated cassandra_node.
+ */
 int cassandra_worker_start(cassandra_node **node, unsigned int port);
 
 /* Performs a no-op Cassandra command, which can be used to measure the
@@ -66,12 +73,20 @@ int cassandra_noop3(cassandra_node *node);
 int cassandra_noop4(cassandra_node *node);
 int cassandra_noop5(cassandra_node *node);
 
-/* Stops a Cassandra node running on localhost at the specified port. Also
- * performs cleanup tasks, such as removing the created column family. The
- * cassandra_node passed as an argument here is freed.
+/* Stops a Cassandra node running on localhost. If any "worker" threads have
+ * connected using cassandra_worker_start(), they should be stopped first
+ * by calling cassandra_worker_stop() before calling this function. This
+ * function performs various cleanup tasks, such as removing the created
+ * column family. The cassandra_node passed as an argument here is freed.
  * Returns: 0 on success, -1 on error.
  */
 int cassandra_stop(cassandra_node *node);
+
+/* Stops a Cassandra node running on localhost that was created for an
+ * additional "worker" thread using cassandra_worker_start(). The
+ * cassandra_node passed as an argument here is freed.
+ * Returns: 0 on success, -1 on error.
+ */
 int cassandra_worker_stop(cassandra_node *node);
 
 /* Puts a key-value pair into the store. Both the key and the value must
