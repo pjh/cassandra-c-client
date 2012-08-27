@@ -1,19 +1,104 @@
 cassandra-c-client
 ==================
-A very basic C client for Cassandra. Note that this code should be taken as a "proof of concept"; it is likely to be unstable, and it comes nowhere close to using all of the power / features of Cassandra. It was originally created to perform a basic performance comparison of Cassandra with some other key-value stores written in C.
+A very basic C client for Cassandra that runs on Linux. Note that this code should be taken as a "proof of concept"; it is likely to be unstable or buggy, and it comes nowhere close to using all of the power / features of Cassandra. It was originally created to perform a basic performance comparison of Cassandra with some other key-value stores written in C. This project may be useful if you would like to see how to use the C interface to Cassandra that Thrift generates. However, note that the C language binding in Thrift is unsupported and not well documented (probably because it relies on GLib, which has many headaches of its own). It is possible that Thrift will completely remove C support from future versions, rendering this project obsolete.
 
-Apologies in advance for the sometimes-poor structure and style of the Makefile and code.
+The list of "official" Cassandra clients is currently kept on this page:
+	http://wiki.apache.org/cassandra/ClientOptions
+Note that there is at least one C++ client (libQtCassandra), which may be possible to use with C code.
 
 
 Instructions to use:
 ====================
-The Cassandra C Client relies on the Apache Thrift framework. Thrift is the interface/transport used by Cassandra to communicate with clients. For more information, see:
-	http://wiki.apache.org/cassandra/ClientOptions
+The Cassandra C Client relies on several dependencies to connect to a Cassandra server. Cassandra uses the Apache Thrift interface/transport to communicate with clients. When used with C code, Thrift requires GNOME GLib, which provides data structures and object-oriented features, and libffi, the foreign function interface library. The instructions in this README have been tested on a 64-bit Ubuntu 12.04 system, with the following software versions (current as of 8/1/12):
+	libffi: 3.0.11
+	glib: 2.33
+	thrift: 0.8.0
+	cassandra: 1.1.2
+These instructions assume that you have root access on your machine. I have also successfully installed all of these dependencies in my home directory without root access; use the --prefix flag when configuring the installation, etc.
+
+Install libffi:
+	Install using your package manager, e.g.:
+		sudo apt-get install libffi-dev libffi6 libffi6-dbg
+	Or, download and install from: http://sourceware.org/libffi/
+
+Install glib:
+	Install using your package manager, e.g.:
+		sudo apt-get install libglib2.0-0 libglib2.0-0-dbg libglib2.0-dev libglib2.0-doc
+	Or, download and install from: ftp.gnome.org/pub/GNOME/sources/glib/
+
+Install thrift:
+	Download the latest version from http://thrift.apache.org/
+	Extract and cd into the thrift-0.8.0 directory
+	Configure the Thrift installation to support C+glib; disable other language bindings (enable them if you wish, but other dependencies may be required):
+		chmod u+x configure
+		./configure --with-c_glib=yes --with-cpp=no --with-boost=no --with-libevent=no --with-zlib=no --with-csharp=no --with-java=no --with-erlang=no --with-python=no --with-perl=no --with-php=no --with-php_extension=no --with-ruby=no --with-haskell=no --with-go=no
+	Build and install:
+		make
+		sudo make install
+	Locate the thrift executable:
+		whereis thrift
+
+Install and run cassandra:
+	Run 'java -version' and check that Java 1.6.0_19 or greater is installed. If not, you may have to update your Java installation, or run 'update-java-alternatives -s ...' on Ubuntu to set a valid Java package.
+	Download the binary release of Cassandra from http://cassandra.apache.org/download/
+	Extract and cd into the apache-cassandra-1.1.2 directory
+	Follow the steps in the README.txt file:
+		sudo mkdir -p /var/log/cassandra
+		sudo chown -R `whoami` /var/log/cassandra
+		sudo mkdir -p /var/lib/cassandra
+		sudo chown -R `whoami` /var/lib/cassandra
+	Now, start Cassandra on the default port (9160); use the -f flag to run in the foreground (quit with Ctrl-c):
+		bin/cassandra -f
+
+Get the Cassandra C Client:
+	Clone the github repository, if you have not already:
+		git clone git@github.com:pjh/cassandra-c-client.git
+
+Generate the Thrift interface code for Cassandra:
+	Run thrift:
+		cd apache-cassandra-1.1.2
+		thrift --gen c_glib interface/cassandra.thrift
+	This will create a directory "gen-c_glib/", containing these files:
+		cassandra.c
+		cassandra.h
+		cassandra_types.c
+		cassandra_types.h
+	Copy this entire directory into the Cassandra C Client directory (where this README file is located):
+		cp -a gen-c_glib /path/to/cassandra-c-client/
+
+Build and run the Cassandra C Client:
+	Build the object files and test file:
+		cd /path/to/cassandra-c-client
+		make
+	This will generate object files in the obj/ subdirectory and a test file "test_cassandra_client" in the current directory. See the Makefile for some more details; you may eventually wish to replace the test_cassandra_client with your own code.
+	Make sure that Cassandra is running on the default port 9160; if not, you will need to adjust the hard-coded port number in cassandra_client.h.
+	Create the Keyspace in Cassandra:
+		Unfortunately, the cassandra_create_keyspace() function has not been implemented yet, so this step must be performed manually. Use the cassandra-cli tool to connect to Cassandra:
+			cd apache-cassandra-1.1.2
+			bin/cassandra-cli --host localhost
+			create keyspace Keyspace1;
+			show keyspaces;
+			exit;
+	Run the test file for the C Cassandra Client:
+		./test_cassandra_client
+	You should now see some output that looks like this:
+		CCC: 140135002576640: Successfully connected to Cassandra node at localhost:9160, has Thrift API version 19.32.0
+		CCC: 140135002576640: set keyspace to Keyspace1
+		CCC: 140135002576640: Added empty column family C_Client_Column_Family to keyspace
+		...
+		CCC: 140135002576640: cassandra_get(key2) returned value=val2
+		CCC: 140135002576640: successfully disconnected from Cassandra node
+	If you are running Cassandra in the foreground of another terminal, you will also see some output there indicating that the Cassandra C Client has successfully connected and performed some operations.
+
+At this point, you may now wish to explore the code and write your own client file to perform the Cassandra operations you need. The basic functions in cassandra_client.[h,c] call the various interface functions defined in the thrift code in the gen-c_glib/ subdirectory; if you want to use more advanced features of Cassandra, you'll probably need to explore the (extensive) code in that subdirectory. The following Cassandra wiki pages will probably be necessary:
+	http://wiki.apache.org/cassandra/API
+	http://wiki.apache.org/cassandra/ThriftExamples
 
 
 Credits:
 ========
-This code was primarily authored by Peter Hornyack at the University of Washington (pjh@cs.washington.edu), with some contributions by Katelin Bailey. It is released into the public domain using the Creative Commons CC0 license (http://creativecommons.org/about/cc0); see the COPYING file for the text of the license.
+This code was primarily authored by Peter Hornyack at the University of Washington (pjh@cs.washington.edu), with some contributions by Katelin Bailey. Please report bugs by using the Issues page on the github site for the project:
+	https://github.com/pjh/cassandra-c-client
 
-Cassandra and other software packages are copyright/trademark of their various owners.
+This code is released into the public domain using the Creative Commons CC0 license (http://creativecommons.org/about/cc0); see the COPYING file for the text of the license. Cassandra, Thrift, GLib, libffi, Ubuntu, and other software packages are copyright/trademark of their various respective owners.
 
