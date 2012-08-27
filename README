@@ -6,6 +6,8 @@ The list of "official" Cassandra clients is currently kept on this page:
 	http://wiki.apache.org/cassandra/ClientOptions
 Note that there is at least one C++ client (libQtCassandra), which may be possible to use with C code.
 
+I have no plans for further development of this Cassandra C Client, but of course you should feel free to fork the github repository.
+
 
 Instructions to use:
 ====================
